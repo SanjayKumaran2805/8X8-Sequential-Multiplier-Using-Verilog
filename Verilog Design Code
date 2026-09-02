@@ -1,0 +1,41 @@
+module seq_mult_8x8 (
+    input  wire        clk,
+    input  wire        rst_n,    // active low reset
+    input  wire        start,    // start signal
+    input  wire [7:0]  a,        // multiplicand
+    input  wire [7:0]  b,        // multiplier
+    output reg  [15:0] product   // result
+);
+
+    reg [7:0] A, B;         // internal registers for inputs
+    reg [15:0] P;           // partial product
+    reg [3:0] count;        // counts 8 cycles
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            product <= 0;
+            A <= 0;
+            B <= 0;
+            P <= 0;
+            count <= 0;
+        end else begin
+            if (start) begin
+                // load inputs at start
+                A <= a;
+                B <= b;
+                P <= 0;
+                count <= 8;
+            end else if (count > 0) begin
+                // shift-and-add multiplication
+                if (B[0]) 
+                    P <= P + {8'b0, A};  // add A if LSB of B is 1
+                A <= A << 1;             // shift A left
+                B <= B >> 1;             // shift B right
+                count <= count - 1;
+
+                if (count == 1)
+                    product <= (B[0] ? P + {8'b0, A} : P); // final result
+            end
+        end
+    end
+endmodule
